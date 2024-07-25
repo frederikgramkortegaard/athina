@@ -318,6 +318,41 @@ func createInitialAthinaFileObject(filename string) (AthinaFile, error) {
 
 }
 
+// Removes the file from the .athina/objects folder
+func AthinaRemoveFile(filename string) error {
+
+	err := os.Remove(ATHINA_PATH_TO_OBJECTS + filename)
+	if err != nil {
+		fmt.Println(err)
+		return err
+
+	}
+
+	return nil
+
+}
+
+// Removes and re-initializes the .athina/object entry for said file
+func AthinaResetFile(filename string) error {
+
+	// Remove the file from the .athina/objects directory
+	err := os.Remove(ATHINA_PATH_TO_OBJECTS + filename)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	// Re-initialize the file
+	err = AthinaAddFile(filename)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+
+}
+
 func AthinaRevertFileByHash(filename string, hash string) error {
 
 	// Load the Athina object
@@ -400,6 +435,10 @@ func main() {
 	if len(args) < 1 {
 
 		for change := range AthinaLookForFileChanges() {
+
+			if config.IsIgnored(change.filename) {
+				continue
+			}
 			switch change.action {
 			case AthinaFileChangeActionAdd:
 				fmt.Println("New file: " + change.filename)
