@@ -8,12 +8,13 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-var config AthinaConfig
+var config Config
+var stash Stash
 
 func isDeltaDiffEmpty(delta string) bool {
 
 	for _, c := range delta {
-		if c == '\t' || c == '+' {
+		if c == '\t' || c == '+' || c == '-' {
 			return false
 		}
 	}
@@ -105,10 +106,10 @@ func AthinaUpdateFile(filename string) error {
 
 	} else {
 		fmt.Println("No changes detected in file: " + filename)
+		return nil
 	}
 
-	return nil
-
+	return errors.New("file not found")
 }
 
 func AthinaAddFile(filename string) error {
@@ -387,10 +388,25 @@ func AthinaRevertFileObjectByHash(athinafile AthinaFile, hash string) error {
 
 	origin := athinafile.Origin
 	dmp := diffmatchpatch.New()
-	for _, filediff := range athinafile.Diffs {
 
-		diff, _ := dmp.DiffFromDelta(origin, filediff.Delta)
-		origin = dmp.DiffText2(diff)
+	// Handle the first diff, which is not a delta but rather just the origin
+	if athinafile.Diffs[0].Hash == hash {
+		origin = athinafile.Origin
+	} else {
+
+		for _, filediff := range athinafile.Diffs[1:] {
+
+			if isDeltaDiffEmpty(filediff.Delta) {
+				continue
+			}
+
+			diff, _ := dmp.DiffFromDelta(origin, filediff.Delta)
+			origin = dmp.DiffText2(diff)
+
+			if filediff.Hash == hash {
+				break
+			}
+		}
 
 	}
 
@@ -403,16 +419,7 @@ func AthinaRevertFileObjectByHash(athinafile AthinaFile, hash string) error {
 
 	//@TODO: Modify the file in the directory
 
-	// Write to the file
-	file, err := os.Create(athinafile.Filename)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	defer file.Close()
-
-	_, err = file.WriteString(origin)
+	err := os.WriteFile(athinafile.Filename, []byte(origin), 0644)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -427,7 +434,10 @@ func main() {
 	initializeAthinaFolder()
 
 	// Load the config file
-	loadAthinaConfig()
+	loadConfig()
+
+	// Load the stash file
+	loadStash()
 
 	args := os.Args[1:]
 

@@ -34,7 +34,7 @@ func loadAthinaFileObject(identifier string) (AthinaFile, error) {
 
 }
 
-func loadAthinaConfig() {
+func loadConfig() {
 	file, _ := os.Open(ATHINA_CONFIG)
 	defer file.Close()
 	decoder := json.NewDecoder(file)

@@ -6,11 +6,11 @@ import (
 	"os"
 )
 
-type AthinaConfig struct {
+type Config struct {
 	Ignored []string
 }
 
-func (c AthinaConfig) Save() error {
+func (c Config) Save() error {
 
 	// Convert the File object to a Json object
 	file, err := os.Create(ATHINA_CONFIG)
@@ -30,7 +30,7 @@ func (c AthinaConfig) Save() error {
 	return nil
 }
 
-func (c AthinaConfig) IsIgnored(filename string) bool {
+func (c Config) IsIgnored(filename string) bool {
 
 	for _, ignored := range c.Ignored {
 		if ignored == filename {

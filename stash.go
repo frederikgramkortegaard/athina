@@ -1,5 +1,10 @@
 package main
 
+import (
+	"encoding/json"
+	"os"
+)
+
 type CommitItem struct {
 	Hash      string     `json:"hash"`
 	Filename  string     `json:"filename"`
@@ -107,4 +112,36 @@ func (s Stash) getCommitByHash(hash string) Commit {
 		}
 	}
 	return Commit{}
+}
+
+func loadStash() (Stash, error) {
+
+	file, err := os.ReadFile(ATHINA_STASH)
+	if err != nil {
+		return stash, err
+	}
+
+	err = json.Unmarshal(file, &stash)
+	if err != nil {
+		return stash, err
+	}
+
+	return stash, nil
+
+}
+
+func (s Stash) Save() error {
+
+	stashJSON, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(ATHINA_STASH, stashJSON, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
